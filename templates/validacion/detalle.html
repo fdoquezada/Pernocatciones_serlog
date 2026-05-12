@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% block title %}Detalle — {{ p.patente }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0 fw-bold">
+            <span class="badge bg-dark me-2">{{ p.patente }}</span>
+            {{ p.conductor }}
+        </h4>
+        <small class="text-muted">{{ p.transporte_nombre }} — {{ p.cliente }}</small>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+    </a>
+</div>
+
+<div class="row g-4">
+
+    <!-- INFO GENERAL -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-info-circle me-2"></i>Información del Equipo
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless">
+                    <tr><td class="text-muted">Patente principal</td><td><strong>{{ p.patente }}</strong></td></tr>
+                    {% if p.patente_secundaria %}
+                    <tr><td class="text-muted">Patente secundaria</td><td>{{ p.patente_secundaria }}</td></tr>
+                    {% endif %}
+                    <tr><td class="text-muted">Conductor</td><td>{{ p.conductor }}</td></tr>
+                    <tr><td class="text-muted">Transporte</td><td>{{ p.transporte_nombre }}</td></tr>
+                    <tr><td class="text-muted">Cliente</td><td>{{ p.cliente }}</td></tr>
+                    <tr><td class="text-muted">Categoría</td><td>{{ p.categoria }}</td></tr>
+                    <tr><td class="text-muted">Operación</td><td>{{ p.operacion }}</td></tr>
+                    <tr><td class="text-muted">F. Fin Plan</td><td>{{ p.fecha_fin_plan|date:"d/m/Y"|default:"—" }}</td></tr>
+                    <tr><td class="text-muted">Estado</td>
+                        <td><span class="badge bg-primary">{{ p.get_estado_display }}</span></td></tr>
+                    <tr><td class="text-muted">Sin señal</td>
+                        <td>
+                            {% if p.sin_senal %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-wifi-off"></i> Sí</span>
+                            {% else %}
+                            <span class="badge bg-success">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Acciones rápidas -->
+                <div class="d-flex gap-2 mt-2">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="accion" value="marcar_sin_senal">
+                        <button type="submit" class="btn btn-sm btn-outline-warning">
+                            <i class="bi bi-wifi-off me-1"></i>
+                            {% if p.sin_senal %}Quitar sin señal{% else %}Marcar sin señal{% endif %}
+                        </button>
+                    </form>
+                    <a href="{% url 'notificaciones_reenviar' p.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-envelope me-1"></i>Reenviar mail
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ESTADO PERNOCTACIÓN -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-moon-stars me-2"></i>Estado de Pernoctación
+            </div>
+            <div class="card-body">
+                <table class="table table-sm table-borderless">
+                    <tr><td class="text-muted">Lugar confirmado</td>
+                        <td><strong class="text-success">{{ p.lugar_pernoctacion|default:"—" }}</strong></td></tr>
+                    <tr><td class="text-muted">ETA</td>
+                        <td>{% if p.hora_eta %}{{ p.hora_eta|time:"H:i" }} hrs{% else %}—{% endif %}</td></tr>
+                    <tr><td class="text-muted">Respondido en</td>
+                        <td>{% if p.respondido_en %}{{ p.respondido_en|date:"d/m H:i" }}{% else %}—{% endif %}</td></tr>
+                    <tr><td class="text-muted">Llegada real</td>
+                        <td>{% if p.hora_llegada_real %}{{ p.hora_llegada_real|date:"H:i" }} hrs{% else %}—{% endif %}</td></tr>
+                    <tr><td class="text-muted">Detención 00:00</td>
+                        <td>
+                            {% if p.cumple_00h is None %}<span class="badge bg-secondary">Pendiente</span>
+                            {% elif p.cumple_00h %}<span class="badge badge-cumple">CUMPLE</span>
+                            {% else %}<span class="badge badge-no-cumple">NO CUMPLE</span>{% endif %}
+                        </td>
+                    </tr>
+                    <tr><td class="text-muted">Extensión horaria</td>
+                        <td>{% if p.extension_horaria %}<span class="badge bg-info text-dark">Sí</span>
+                            {% else %}No{% endif %}</td></tr>
+                    <tr><td class="text-muted">Hora salida</td>
+                        <td>{% if p.hora_salida %}{{ p.hora_salida|date:"H:i" }} hrs{% else %}—{% endif %}</td></tr>
+                    <tr><td class="text-muted">Total hrs descansado</td>
+                        <td><strong>{{ p.horas_totales_display }}</strong></td></tr>
+                    <tr><td class="text-muted">Cumple 8 horas</td>
+                        <td>
+                            {% if p.cumple_8h is None %}<span class="badge bg-secondary">Pendiente</span>
+                            {% elif p.cumple_8h %}<span class="badge badge-cumple">CUMPLE</span>
+                            {% else %}<span class="badge badge-no-cumple">NO CUMPLE</span>{% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDITAR LUGAR -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-pencil me-2"></i>Actualizar lugar de pernoctación
+            </div>
+            <div class="card-body">
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="actualizar_lugar">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Lugar</label>
+                        <input type="text" name="lugar" class="form-control"
+                               value="{{ p.lugar_pernoctacion }}"
+                               placeholder="Lugar de pernoctación">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">ETA</label>
+                        <input type="time" name="hora_eta" class="form-control"
+                               value="{% if p.hora_eta %}{{ p.hora_eta|time:'H:i' }}{% endif %}">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save me-1"></i>Guardar cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmado — Pernoctaciones</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  body { background: #f0f4f8; font-family: 'Segoe UI', sans-serif; }
+  .header { background: #1e2a3a; color: white; padding: 20px 0; }
+  .card { border: none; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  .patente-badge { background: #1e2a3a; color: #fff; font-size: 1rem;
+                   font-weight: 700; padding: 4px 12px; border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1 class="h4 mb-0"><i class="bi bi-moon-stars-fill me-2"></i>Control de Pernoctaciones</h1>
+    <p class="mb-0 text-muted small">{{ hoy|date:"d \d\e F \d\e Y" }} — {{ transporte_nombre }}</p>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="card mb-4">
+    <div class="card-body text-center py-5">
+      <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+      <h3 class="fw-bold mt-3">¡Información recibida!</h3>
+      <p class="text-muted fs-5">
+        Gracias <strong>{{ transporte_nombre }}</strong>.<br>
+        El equipo de control ha sido notificado.
+      </p>
+    </div>
+  </div>
+
+  <!-- RESUMEN DE LO INGRESADO -->
+  <h5 class="fw-bold mb-3">Resumen de lo ingresado:</h5>
+  {% for equipo in equipos %}
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <span class="patente-badge">{{ equipo.patente }}</span>
+        {% if equipo.sin_senal %}
+        <span class="badge bg-warning text-dark"><i class="bi bi-wifi-off me-1"></i>Sin señal</span>
+        {% else %}
+        <span class="badge bg-success"><i class="bi bi-check me-1"></i>Confirmado</span>
+        {% endif %}
+      </div>
+      <div class="row g-2 mt-1">
+        <div class="col-md-4">
+          <small class="text-muted d-block">Conductor</small>
+          <strong>{{ equipo.conductor }}</strong>
+        </div>
+        <div class="col-md-4">
+          <small class="text-muted d-block">Lugar pernoctación</small>
+          <strong>{{ equipo.lugar_pernoctacion|default:"Sin señal" }}</strong>
+        </div>
+        <div class="col-md-4">
+          <small class="text-muted d-block">ETA</small>
+          <strong>{% if equipo.hora_eta %}{{ equipo.hora_eta|time:"H:i" }} hrs{% else %}—{% endif %}</strong>
+        </div>
+        {% if equipo.observaciones_primera %}
+        <div class="col-12">
+          <small class="text-muted d-block">Observaciones</small>
+          <span>{{ equipo.observaciones_primera }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- BOTÓN PARA CORREGIR -->
+  <div class="text-center mt-4">
+    <a href="{% url 'transporte_formulario' token=token %}" class="btn btn-outline-primary">
+      <i class="bi bi-pencil me-2"></i>Modificar información
+    </a>
+  </div>
+
+</div>
+</body>
+</html>

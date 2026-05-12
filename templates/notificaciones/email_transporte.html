@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pernoctaciones {{ fecha }}</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+  .container { max-width: 620px; margin: 0 auto; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
+  .header { background: #1e2a3a; color: #fff; padding: 28px 30px; }
+  .header h1 { margin: 0; font-size: 20px; }
+  .header p { margin: 6px 0 0; color: #adb5bd; font-size: 14px; }
+  .body { padding: 28px 30px; }
+  .intro { font-size: 15px; margin-bottom: 20px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  th { background: #1e2a3a; color: #fff; padding: 10px 12px; text-align: left; font-size: 13px; }
+  td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #f8f9fa; }
+  .patente { font-weight: 700; font-size: 15px; background: #1e2a3a; color: #fff; padding: 3px 8px; border-radius: 4px; }
+  .btn-link { display: block; background: #0d6efd; color: #fff !important; text-decoration: none; text-align: center; padding: 16px 30px; border-radius: 8px; font-size: 16px; font-weight: 700; margin: 24px 0; }
+  .alerta { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; }
+  .footer { background: #f8f9fa; padding: 16px 30px; font-size: 12px; color: #6c757d; border-top: 1px solid #e9ecef; }
+  .link-texto { word-break: break-all; color: #0d6efd; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🌙 Control de Pernoctaciones</h1>
+    <p>Fecha: {{ fecha|date:"d \d\e F \d\e Y" }} — {{ transporte_nombre }}</p>
+  </div>
+
+  <div class="body">
+    <p class="intro">
+      Estimado equipo de <strong>{{ transporte_nombre }}</strong>,<br><br>
+      Se solicita confirmar el <strong>lugar de pernoctación y hora estimada de llegada</strong>
+      para los siguientes equipos que pernoctan esta noche:
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Patente</th>
+          <th>Conductor</th>
+          <th>Cliente</th>
+          <th>F. Fin Plan</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for equipo in equipos %}
+        <tr>
+          <td><span class="patente">{{ equipo.patente }}</span>
+            {% if equipo.patente_secundaria %}
+            <br><small style="color:#6c757d;">{{ equipo.patente_secundaria }}</small>
+            {% endif %}
+          </td>
+          <td>{{ equipo.conductor }}</td>
+          <td>{{ equipo.cliente }}</td>
+          <td>{{ equipo.fecha_fin_plan|date:"d/m/Y" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="alerta">
+      ⏰ <strong>Importante:</strong> Los equipos deben estar detenidos en el lugar de pernoctación
+      <strong>antes de las 00:00 hrs.</strong> de hoy. Por favor complete la información
+      a la brevedad.
+    </div>
+
+    <a href="{{ link }}" class="btn-link">
+      👉 Ingresar lugar y hora de llegada
+    </a>
+
+    <p style="font-size:13px; color:#6c757d;">
+      Si el botón no funciona, copie y pegue este enlace en su navegador:<br>
+      <span class="link-texto">{{ link }}</span>
+    </p>
+  </div>
+
+  <div class="footer">
+    Este mensaje fue generado automáticamente por el sistema de Control de Pernoctaciones.<br>
+    Por favor no responda a este correo. Use el enlace para completar la información.
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}Enviar Mails — Pernoctaciones{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0 fw-bold">Envío de Mails a Transportes</h4>
+        <small class="text-muted">{{ hoy|date:"d \d\e F \d\e Y" }} —
+            <span class="text-success">{{ ya_enviados }} transportes ya notificados hoy</span>
+        </small>
+    </div>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Volver
+    </a>
+</div>
+
+{% if not por_transporte %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="bi bi-check-circle-fill text-success fs-1 mb-3 d-block"></i>
+        <h5>Todos los mails del día ya fueron enviados</h5>
+        <p class="text-muted">{{ ya_enviados }} transportes notificados.</p>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">Ir al Dashboard</a>
+    </div>
+</div>
+{% else %}
+
+<form method="post" id="form-envio">
+    {% csrf_token %}
+
+    <!-- BARRA SUPERIOR DE ACCIONES -->
+    <div class="card mb-3">
+        <div class="card-body py-2 d-flex justify-content-between align-items-center">
+            <div>
+                <span class="text-muted">Transportes pendientes: </span>
+                <strong>{{ total_pendientes }}</strong>
+                &nbsp;|&nbsp;
+                <span class="text-muted">Seleccionados: </span>
+                <strong id="contador">{{ total_pendientes }}</strong>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-sel-todos">
+                    <i class="bi bi-check-all"></i> Seleccionar todos
+                </button>
+                <button type="submit" class="btn btn-primary px-4" id="btn-enviar">
+                    <i class="bi bi-send me-2"></i>Enviar mails seleccionados
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARDS POR TRANSPORTE -->
+    {% for tte_nombre, datos in por_transporte.items %}
+    <div class="card mb-3 card-transporte">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <input type="checkbox" name="transportes" value="{{ tte_nombre }}"
+                       class="form-check-input check-transporte fs-5" checked
+                       id="check_{{ forloop.counter }}">
+                <label for="check_{{ forloop.counter }}" class="fw-bold mb-0" style="cursor:pointer;">
+                    <i class="bi bi-truck me-2"></i>{{ tte_nombre }}
+                </label>
+                <span class="badge bg-primary">{{ datos.equipos|length }} equipo(s)</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-secondary btn-toggle-detalle"
+                    data-target="detalle_{{ forloop.counter }}">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+
+        <div class="card-body" id="detalle_{{ forloop.counter }}">
+            <!-- EMAIL DEL TRANSPORTE -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold small text-muted">
+                    <i class="bi bi-envelope me-1"></i>Email del transporte
+                </label>
+                <input type="email"
+                       name="email_{{ tte_nombre }}"
+                       class="form-control"
+                       value="{{ datos.email }}"
+                       placeholder="correo@transporte.cl"
+                       required>
+                {% if not datos.email %}
+                <div class="text-danger small mt-1">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Sin email registrado. Ingrésalo aquí (se guardará para próximos envíos).
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- TABLA DE EQUIPOS -->
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Patente</th>
+                            <th>Conductor</th>
+                            <th>Cliente</th>
+                            <th>F. Fin Plan</th>
+                            <th>Destino</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipo in datos.equipos %}
+                        <tr>
+                            <td><strong>{{ equipo.patente }}</strong>
+                                {% if equipo.patente_secundaria %}
+                                <small class="text-muted d-block">{{ equipo.patente_secundaria }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ equipo.conductor }}</td>
+                            <td><span class="badge bg-secondary">{{ equipo.cliente }}</span></td>
+                            <td><small>{{ equipo.fecha_fin_plan|date:"d/m/Y" }}</small></td>
+                            <td><small class="text-muted">{{ equipo.direccion_descarga|truncatechars:50 }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PREVIEW DEL LINK -->
+            <div class="mt-3 p-2 bg-light rounded border small text-muted">
+                <i class="bi bi-link-45deg me-1"></i>
+                <strong>Link que recibirá el transporte:</strong><br>
+                <span class="text-primary">{{ request.scheme }}://{{ request.get_host }}/transporte/{{ datos.equipos.0.token }}/</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- BOTÓN FINAL -->
+    <div class="text-end mt-3">
+        <button type="submit" class="btn btn-success btn-lg px-5">
+            <i class="bi bi-send me-2"></i>Enviar mails seleccionados
+        </button>
+    </div>
+</form>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Contador de seleccionados
+function actualizarContador() {
+    const total = $('.check-transporte:checked').length;
+    $('#contador').text(total);
+    $('#btn-enviar').prop('disabled', total === 0);
+}
+
+$('.check-transporte').on('change', actualizarContador);
+
+$('#btn-sel-todos').on('click', function() {
+    $('.check-transporte').prop('checked', true);
+    actualizarContador();
+});
+
+// Toggle detalle de cada transporte
+$('.btn-toggle-detalle').on('click', function() {
+    const target = '#' + $(this).data('target');
+    $(target).slideToggle(200);
+    const icon = $(this).find('i');
+    icon.toggleClass('bi-chevron-down bi-chevron-up');
+});
+
+// Spinner al enviar
+$('#form-envio').on('submit', function() {
+    $('#btn-enviar').prop('disabled', true).html(
+        '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...'
+    );
+});
+</script>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Revisión TMS — Pernoctaciones{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0 fw-bold">Revisión de Equipos</h4>
+        <small class="text-muted">
+            {{ archivo_nombre }} —
+            <span class="text-danger">{{ total_original }} originales</span> →
+            <span class="text-success fw-semibold">{{ total_filtrado }} después de filtros</span>
+        </small>
+    </div>
+    <a href="{% url 'tms_cargar' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Cargar otro
+    </a>
+</div>
+
+<!-- RESUMEN POR TRANSPORTE -->
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+        <i class="bi bi-truck me-2"></i>Resumen por Transporte
+        <span class="badge bg-primary ms-2">{{ total_transportes }} transportes</span>
+    </div>
+    <div class="card-body">
+        <div class="row g-2">
+            {% for tte, equipos in transportes.items %}
+            <div class="col-auto">
+                <span class="badge bg-light text-dark border fs-6 px-3 py-2">
+                    <i class="bi bi-truck me-1"></i>
+                    {{ tte }} 
+                    <span class="badge bg-primary ms-1">{{ equipos|length }}</span>
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- TABLA DETALLE -->
+<div class="card">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-table me-2"></i>Detalle de Equipos a Pernoctar</span>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-light" id="btn-seleccionar-todos">
+                <i class="bi bi-check-all me-1"></i>Seleccionar todos
+            </button>
+            <button class="btn btn-sm btn-outline-warning" id="btn-deseleccionar-todos">
+                <i class="bi bi-x-circle me-1"></i>Deseleccionar todos
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <form method="post" action="{% url 'tms_confirmar' %}" id="form-confirmar">
+            {% csrf_token %}
+            <div class="table-responsive">
+                <table id="tabla-revision" class="table table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width:40px">
+                                <input type="checkbox" id="check-todos" checked class="form-check-input">
+                            </th>
+                            <th>#</th>
+                            <th>Transporte</th>
+                            <th>Patente</th>
+                            <th>Conductor</th>
+                            <th>Cliente</th>
+                            <th>Categoría</th>
+                            <th>Operación</th>
+                            <th>F. Fin Plan</th>
+                            <th>Destino</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in registros %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="seleccionados" value="{{ forloop.counter0 }}"
+                                       class="form-check-input check-equipo" checked>
+                            </td>
+                            <td class="text-muted small">{{ forloop.counter }}</td>
+                            <td>
+                                <strong>{{ r.transporte_nombre }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-dark fs-6">{{ r.patente }}</span>
+                                {% if r.patente_secundaria %}
+                                <small class="text-muted d-block">{{ r.patente_secundaria }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.conductor }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ r.cliente }}</span>
+                            </td>
+                            <td><small>{{ r.categoria }}</small></td>
+                            <td>
+                                <small class="{% if r.operacion == 'PRY TRANSPORTE DE PROYECTOS' %}text-primary{% endif %}">
+                                    {{ r.operacion }}
+                                </small>
+                            </td>
+                            <td><small>{{ r.fecha_fin_plan|date:"d/m/Y"|default:"—" }}</small></td>
+                            <td>
+                                <small class="text-muted" title="{{ r.direccion_descarga }}">
+                                    {{ r.direccion_descarga|truncatechars:40 }}
+                                </small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- BARRA DE ACCIÓN -->
+            <div class="p-3 bg-light border-top d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted">Seleccionados: </span>
+                    <strong id="contador-seleccionados">{{ total_filtrado }}</strong>
+                    <span class="text-muted"> de {{ total_filtrado }}</span>
+                </div>
+                <button type="submit" class="btn btn-success btn-lg px-5" id="btn-confirmar">
+                    <i class="bi bi-send me-2"></i>
+                    Confirmar y preparar envío de mails
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#tabla-revision').DataTable({
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.8/i18n/es-CL.json' },
+        pageLength: 50,
+        order: [[2, 'asc']],
+        columnDefs: [{ orderable: false, targets: 0 }]
+    });
+
+    function actualizarContador() {
+        const total = $('.check-equipo:checked').length;
+        $('#contador-seleccionados').text(total);
+        $('#btn-confirmar').prop('disabled', total === 0);
+    }
+
+    // Check todos
+    $('#check-todos').on('change', function() {
+        $('.check-equipo').prop('checked', this.checked);
+        actualizarContador();
+    });
+
+    $('#btn-seleccionar-todos').on('click', function() {
+        $('.check-equipo, #check-todos').prop('checked', true);
+        actualizarContador();
+    });
+
+    $('#btn-deseleccionar-todos').on('click', function() {
+        $('.check-equipo, #check-todos').prop('checked', false);
+        actualizarContador();
+    });
+
+    $('.check-equipo').on('change', actualizarContador);
+});
+</script>
+{% endblock %}

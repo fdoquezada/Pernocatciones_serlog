@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Reporte Pernoctaciones {{ fecha }}</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+  .container { max-width: 700px; margin: 0 auto; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
+  .header { background: #1e2a3a; color: #fff; padding: 24px 30px; }
+  .header h1 { margin: 0; font-size: 20px; }
+  .header p { margin: 4px 0 0; color: #adb5bd; font-size: 13px; }
+  .body { padding: 24px 30px; }
+  .kpi-row { display: flex; gap: 12px; margin-bottom: 24px; }
+  .kpi-box { flex: 1; border-radius: 8px; padding: 16px; text-align: center; }
+  .kpi-box.azul { background: #e8f0fe; border-left: 4px solid #0d6efd; }
+  .kpi-box.verde { background: #d1f2eb; border-left: 4px solid #198754; }
+  .kpi-box.rojo { background: #fde8e8; border-left: 4px solid #dc3545; }
+  .kpi-box.amarillo { background: #fff9e6; border-left: 4px solid #ffc107; }
+  .kpi-num { font-size: 2rem; font-weight: 700; line-height: 1; }
+  .kpi-label { font-size: 11px; color: #6c757d; margin-top: 4px; }
+  .section-title { font-size: 14px; font-weight: 700; color: #1e2a3a; border-bottom: 2px solid #e9ecef; padding-bottom: 6px; margin: 20px 0 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+  th { background: #1e2a3a; color: #fff; padding: 8px 10px; text-align: left; }
+  td { padding: 7px 10px; border-bottom: 1px solid #e9ecef; }
+  tr:nth-child(even) td { background: #f8f9fa; }
+  .badge-cumple { background: #198754; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-no { background: #dc3545; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-pend { background: #ffc107; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .badge-senal { background: #fd7e14; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+  .footer { background: #f8f9fa; padding: 14px 30px; font-size: 11px; color: #6c757d; border-top: 1px solid #e9ecef; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🌙 Reporte de Pernoctaciones — {{ turno }}</h1>
+    <p>{{ fecha|date:"d \d\e F \d\e Y" }} | Generado por: {{ enviado_por }}</p>
+  </div>
+
+  <div class="body">
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-box azul">
+        <div class="kpi-num">{{ kpis.total }}</div>
+        <div class="kpi-label">TOTAL EQUIPOS</div>
+      </div>
+      <div class="kpi-box {% if kpis.pct_00h >= 90 %}verde{% else %}rojo{% endif %}">
+        <div class="kpi-num">{{ kpis.pct_00h }}%</div>
+        <div class="kpi-label">CUMPLE 00:00</div>
+      </div>
+      <div class="kpi-box {% if kpis.pct_8h >= 90 %}verde{% else %}rojo{% endif %}">
+        <div class="kpi-num">{{ kpis.pct_8h }}%</div>
+        <div class="kpi-label">CUMPLE 8 HRS</div>
+      </div>
+      <div class="kpi-box amarillo">
+        <div class="kpi-num">{{ kpis.sin_senal }}</div>
+        <div class="kpi-label">SIN SEÑAL</div>
+      </div>
+    </div>
+
+    <!-- TABLA RESUMEN 00:00 -->
+    <div class="section-title">Detención antes de 00:00 hrs</div>
+    <table>
+      <tr>
+        <th>CUMPLE</th><th>NO CUMPLE</th><th>EN RUTA</th><th>CON EXTENSIÓN</th><th>% CUMPLIMIENTO</th>
+      </tr>
+      <tr>
+        <td><strong style="color:#198754;">{{ kpis.cumple_00h }}</strong></td>
+        <td><strong style="color:#dc3545;">{{ kpis.no_cumple_00h }}</strong></td>
+        <td><strong style="color:#ffc107;">{{ kpis.en_ruta_00h }}</strong></td>
+        <td>{{ kpis.con_extension }}</td>
+        <td><strong>{{ kpis.pct_00h }}%</strong></td>
+      </tr>
+    </table>
+
+    <!-- TABLA RESUMEN 8 HRS -->
+    <div class="section-title">Cumplimiento 8 horas de descanso</div>
+    <table>
+      <tr>
+        <th>CUMPLE</th><th>NO CUMPLE</th><th>PENDIENTE</th><th>% CUMPLIMIENTO</th>
+      </tr>
+      <tr>
+        <td><strong style="color:#198754;">{{ kpis.cumple_8h }}</strong></td>
+        <td><strong style="color:#dc3545;">{{ kpis.no_cumple_8h }}</strong></td>
+        <td><strong style="color:#ffc107;">{{ kpis.en_ruta_8h }}</strong></td>
+        <td><strong>{{ kpis.pct_8h }}%</strong></td>
+      </tr>
+    </table>
+
+    <!-- RESUMEN POR TRANSPORTE -->
+    <div class="section-title">Resumen por Transporte</div>
+    <table>
+      <tr>
+        <th>Transporte</th><th>Equipos</th><th>Cumple 00:00</th><th>No Cumple 00:00</th><th>Cumple 8hrs</th><th>No Cumple 8hrs</th>
+      </tr>
+      {% for tte in kpis.transportes %}
+      <tr>
+        <td><strong>{{ tte.nombre }}</strong></td>
+        <td>{{ tte.total }}</td>
+        <td>{% if tte.cumple_00h %}<span class="badge-cumple">{{ tte.cumple_00h }}</span>{% else %}—{% endif %}</td>
+        <td>{% if tte.no_cumple_00h %}<span class="badge-no">{{ tte.no_cumple_00h }}</span>{% else %}—{% endif %}</td>
+        <td>{% if tte.cumple_8h %}<span class="badge-cumple">{{ tte.cumple_8h }}</span>{% else %}—{% endif %}</td>
+        <td>{% if tte.no_cumple_8h %}<span class="badge-no">{{ tte.no_cumple_8h }}</span>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+
+    <!-- DETALLE COMPLETO -->
+    <div class="section-title">Detalle Completo de Equipos</div>
+    <table>
+      <tr>
+        <th>Patente</th><th>Conductor</th><th>Transporte</th><th>Lugar</th>
+        <th>Llegada</th><th>Salida</th><th>Hrs</th><th>00:00</th><th>8hrs</th>
+      </tr>
+      {% for p in pernoctaciones %}
+      <tr>
+        <td><strong>{{ p.patente }}</strong></td>
+        <td>{{ p.conductor }}</td>
+        <td>{{ p.transporte_nombre }}</td>
+        <td>{{ p.lugar_pernoctacion|default:"—" }}</td>
+        <td>{% if p.hora_llegada_real %}{{ p.hora_llegada_real|date:"H:i" }}{% elif p.sin_senal %}<span class="badge-senal">S/S</span>{% else %}—{% endif %}</td>
+        <td>{% if p.hora_salida %}{{ p.hora_salida|date:"H:i" }}{% else %}—{% endif %}</td>
+        <td>{{ p.horas_totales_display }}</td>
+        <td>
+          {% if p.cumple_00h is None %}<span class="badge-pend">PEND</span>
+          {% elif p.cumple_00h %}<span class="badge-cumple">SÍ</span>
+          {% else %}<span class="badge-no">NO</span>{% endif %}
+        </td>
+        <td>
+          {% if p.cumple_8h is None %}<span class="badge-pend">PEND</span>
+          {% elif p.cumple_8h %}<span class="badge-cumple">SÍ</span>
+          {% else %}<span class="badge-no">NO</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+
+  </div>
+
+  <div class="footer">
+    Reporte generado automáticamente por el sistema de Control de Pernoctaciones.<br>
+    {{ fecha|date:"d/m/Y" }} — {{ turno }}
+  </div>
+</div>
+</body>
+</html>

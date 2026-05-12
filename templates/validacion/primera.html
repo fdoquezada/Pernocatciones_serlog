@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% block title %}Validación 00:00 — Pernoctaciones{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="mb-0 fw-bold">Validación — Detención antes de 00:00 hrs</h4>
+        <small class="text-muted">{{ hoy|date:"d \d\e F \d\e Y" }} —
+            <span class="text-warning">{{ total_pendientes }} pendientes</span> /
+            <span class="text-success">{{ total_validados }} validados</span>
+        </small>
+    </div>
+    <a href="{% url 'validacion_ocho' %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-right me-1"></i> Ir a validación 8 hrs
+    </a>
+</div>
+
+{% if not equipos %}
+<div class="card mb-4">
+    <div class="card-body text-center py-4">
+        <i class="bi bi-check-circle-fill text-success fs-1 mb-2 d-block"></i>
+        <h5>No hay equipos pendientes de validación</h5>
+        <p class="text-muted">Todos los equipos con lugar confirmado ya fueron validados.</p>
+    </div>
+</div>
+{% else %}
+
+<form method="post" id="form-primera">
+{% csrf_token %}
+
+<!-- TABLA DE VALIDACIÓN -->
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clock-history me-2"></i>Equipos pendientes de validación</span>
+        <span class="badge bg-warning text-dark">{{ total_pendientes }} equipos</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Transporte / Patente</th>
+                        <th>Conductor</th>
+                        <th>Lugar Pernoctación</th>
+                        <th>ETA</th>
+                        <th>Hora llegada real</th>
+                        <th>Extensión</th>
+                        <th>Observaciones</th>
+                        <th style="min-width:200px;">Validación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for equipo in equipos %}
+                    <tr id="fila_{{ equipo.id }}">
+                        <td>
+                            <small class="text-muted d-block">{{ equipo.transporte_nombre }}</small>
+                            <span class="badge bg-dark fs-6">{{ equipo.patente }}</span>
+                            {% if equipo.sin_senal %}
+                            <span class="badge bg-warning text-dark ms-1">
+                                <i class="bi bi-wifi-off"></i> Sin señal
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ equipo.conductor }}</td>
+                        <td>
+                            <span class="text-success fw-semibold">
+                                {{ equipo.lugar_pernoctacion|default:"—" }}
+                            </span>
+                            {% if equipo.cliente %}
+                            <small class="text-muted d-block">{{ equipo.cliente }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if equipo.hora_eta %}
+                            <span class="badge bg-info text-dark">
+                                {{ equipo.hora_eta|time:"H:i" }} hrs
+                            </span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            <input type="time"
+                                   name="hora_llegada_{{ equipo.id }}"
+                                   class="form-control form-control-sm"
+                                   style="width: 110px;"
+                                   id="hora_{{ equipo.id }}">
+                        </td>
+                        <td>
+                            <div class="form-check">
+                                <input type="checkbox"
+                                       name="extension_{{ equipo.id }}"
+                                       id="ext_{{ equipo.id }}"
+                                       class="form-check-input">
+                                <label for="ext_{{ equipo.id }}" class="form-check-label small">
+                                    Con atraso
+                                </label>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="text"
+                                   name="obs_{{ equipo.id }}"
+                                   class="form-control form-control-sm"
+                                   placeholder="Observación..."
+                                   style="min-width:150px;">
+                        </td>
+                        <td>
+                            <div class="d-flex flex-column gap-1">
+                                <button type="submit"
+                                        name="accion_{{ equipo.id }}"
+                                        value="cumple"
+                                        class="btn btn-cumple btn-sm w-100">
+                                    <i class="bi bi-check-circle me-1"></i>CUMPLE
+                                </button>
+                                <button type="submit"
+                                        name="accion_{{ equipo.id }}"
+                                        value="no_cumple"
+                                        class="btn btn-no-cumple btn-sm w-100">
+                                    <i class="bi bi-x-circle me-1"></i>NO CUMPLE
+                                </button>
+                                <button type="submit"
+                                        name="accion_{{ equipo.id }}"
+                                        value="sin_senal"
+                                        class="btn btn-warning btn-sm w-100 text-dark">
+                                    <i class="bi bi-wifi-off me-1"></i>SIN SEÑAL
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</form>
+{% endif %}
+
+<!-- TABLA YA VALIDADOS -->
+{% if ya_validados %}
+<div class="card">
+    <div class="card-header bg-secondary text-white">
+        <i class="bi bi-check-all me-2"></i>Ya validados hoy
+        <span class="badge bg-light text-dark ms-2">{{ total_validados }}</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Transporte</th>
+                        <th>Patente</th>
+                        <th>Conductor</th>
+                        <th>Lugar</th>
+                        <th>Llegada real</th>
+                        <th>Extensión</th>
+                        <th>Resultado</th>
+                        <th>Obs.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in ya_validados %}
+                    <tr>
+                        <td><small>{{ p.transporte_nombre }}</small></td>
+                        <td><strong>{{ p.patente }}</strong></td>
+                        <td>{{ p.conductor }}</td>
+                        <td><small>{{ p.lugar_pernoctacion|default:"—" }}</small></td>
+                        <td>
+                            {% if p.hora_llegada_real %}
+                            {{ p.hora_llegada_real|date:"H:i" }} hrs
+                            {% elif p.sin_senal %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-wifi-off"></i></span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if p.extension_horaria %}
+                            <span class="badge bg-info text-dark">Con extensión</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if p.cumple_00h is None %}
+                                <span class="badge bg-warning text-dark">Sin señal</span>
+                            {% elif p.cumple_00h %}
+                                <span class="badge badge-cumple">CUMPLE</span>
+                            {% else %}
+                                <span class="badge badge-no-cumple">NO CUMPLE</span>
+                            {% endif %}
+                        </td>
+                        <td><small class="text-muted">{{ p.observaciones_primera|truncatechars:40 }}</small></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
