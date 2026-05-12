@@ -1,0 +1,9 @@
+django==5.1
+psycopg2-binary==2.9.9
+pandas==2.2.2
+openpyxl==3.1.2
+python-decouple==3.8
+django-anymail[sendgrid]==10.3
+Pillow==10.3.0
+gunicorn==22.0.0
+whitenoise==6.7.0
